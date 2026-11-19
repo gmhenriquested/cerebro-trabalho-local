@@ -45,7 +45,7 @@ function Exit-Trava([string]$Nome) {
 }
 
 # Roda o Claude em modo não interativo.
-# CEREBRO_LOOP=1 faz os hooks de ritual (contexto, lembrete, sync) ficarem quietos;
+# CEREBRO_LOOP=1 faz os hooks de ritual (contexto, colhedor, sync) ficarem quietos;
 # o hook de guarda continua ativo e fica mais rígido.
 function Invoke-Claude {
   param(
@@ -55,9 +55,12 @@ function Invoke-Claude {
     [string]$Dir = $Vault,
     [string]$Modo = "dontAsk",
     [int]$MaxTurnos = 40,
-    [string[]]$AddDir = @()
+    [string[]]$AddDir = @(),
+    [switch]$Escrita
   )
   $env:CEREBRO_LOOP = "1"
+  # Escrita automática de baixo risco no vault (a guarda decide onde pode).
+  if ($Escrita) { $env:CEREBRO_ESCRITA = "auto" } else { $env:CEREBRO_ESCRITA = "" }
   $tmp = Join-Path $State ("prompt-{0}.md" -f ([guid]::NewGuid().ToString("N").Substring(0, 8)))
   Write-Arquivo $tmp $Prompt
   $argsClaude = @("-p", "--no-session-persistence", "--tools", $Tools, "--permission-mode", $Modo, "--max-turns", "$MaxTurnos")
@@ -73,9 +76,31 @@ function Invoke-Claude {
   return (($saida | Out-String).Trim())
 }
 
+# Lê <vault>\config\cerebro.json (ou um objeto vazio).
+function Get-ConfigCerebro {
+  $arq = Join-Path $Vault "config\cerebro.json"
+  if (Test-Path $arq) { try { return ((Read-Arquivo $arq) | ConvertFrom-Json) } catch {} }
+  return (New-Object PSObject)
+}
+
+# Lista as propostas pendentes: objetos com Arquivo e Titulo.
+function Get-PropostasPendentes {
+  $lista = @()
+  foreach ($f in (Get-ChildItem (Join-Path $Vault "propostas") -Filter *.md -ErrorAction SilentlyContinue | Sort-Object Name)) {
+    $blocos = [regex]::Split((Read-Arquivo $f.FullName), '(?m)^(?=## )')
+    foreach ($b in $blocos) {
+      if ($b -match '\*\*Status:\*\*\s*pendente') {
+        $titulo = (($b -split '\r?\n')[0] -replace '^##\s*', '').Trim()
+        $lista += New-Object PSObject -Property @{ Arquivo = $f.Name; Titulo = $titulo }
+      }
+    }
+  }
+  return $lista
+}
+
 # Grava a saída de um loop em propostas/AAAA-MM-DD-<nome>.md (ou não grava, se não houver nada).
 function Save-Proposta([string]$Nome, [string]$Texto) {
-  if (-not $Texto -or $Texto -match '^\s*SEM_PROPOSTAS') {
+  if (-not $Texto -or $Texto -match '^\s*(SEM_PROPOSTAS|NADA_A_COLHER)') {
     Write-CerebroLog $Nome "rodou, sem propostas"
     return $null
   }

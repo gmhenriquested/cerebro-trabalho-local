@@ -3,9 +3,9 @@
 Ordem sugerida. Ligue uma etapa, use por alguns dias, só então siga.
 
 ## Etapa 1: base (dia 1)
-- [ ] Instalar o kit, criar o repositório privado do vault, abrir no Obsidian.
+- [ ] Instalar, abrir o vault no Obsidian e (opcional) ligar um remoto privado.
 - [ ] Preencher `pessoas/`, `projetos/` e `referencias/` com o básico.
-- [ ] Conferir que o SessionStart injeta o contexto, o sync sobe os commits e a guarda bloqueia um `git push --force` de teste.
+- [ ] Conferir que o SessionStart injeta o contexto, o colhedor grava algo depois de uns 8 turnos, o sync faz commit e a guarda bloqueia um `git push --force` de teste.
 
 ## Etapa 2: agentes e vibe coding (semana 1)
 - [ ] Usar `/capturar`, o agente `ata` e `/construir` no dia a dia.
@@ -13,7 +13,8 @@ Ordem sugerida. Ligue uma etapa, use por alguns dias, só então siga.
 - [ ] Criar 1 ou 2 agentes do stack da empresa (no vault ou em `.claude/agents/` do repo, não no kit).
 
 ## Etapa 3: loops (semana 2)
-- [ ] Ligar a reflexão e revisar as propostas todo dia por uma semana.
+- [ ] Ver o que o colhedor gravou sozinho na primeira semana (`propostas/*-colhedor-*.md`) e ajustar `prompts/colhedor.md` se gravar demais ou de menos.
+- [ ] Ligar a reflexão; aprovar as propostas pela revisão de um clique.
 - [ ] Ligar o noturno e o semanal.
 - [ ] Ajustar os prompts em `prompts/` conforme as propostas ruins.
 
@@ -22,7 +23,7 @@ Ordem sugerida. Ligue uma etapa, use por alguns dias, só então siga.
 - [ ] Ter pelo menos 5 casos em `evals/casos/` vindos de correções reais. Rodar o semanal com `-ComEvals`.
 
 ## Etapa 5: autonomia (semana 4)
-- [ ] Escolher um repositório com testes bons. Configurar em `config/autonomia.json` com nível 0.
+- [ ] Escolher um repositório com testes bons. Configurar em `config/cerebro.json` com nível 0.
 - [ ] Rodar 3 tarefas pequenas com `executor.ps1 -Tarefa <nome>` e ler os relatórios.
 - [ ] Subir para nível 1 e ligar `executor.ativo`. Nível 2 só depois de umas 10 tarefas boas.
 

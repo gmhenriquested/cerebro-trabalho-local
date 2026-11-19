@@ -1,4 +1,13 @@
 {
+  "colhedor": {
+    "ativo": true,
+    "a_cada_turnos": 8,
+    "minutos_minimos": 20
+  },
+  "revisao_na_sessao": {
+    "ativo": true,
+    "max_por_dia": 1
+  },
   "executor": {
     "ativo": false,
     "max_tarefas_por_rodada": 1,

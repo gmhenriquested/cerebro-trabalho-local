@@ -1,6 +1,6 @@
 # ADR 0002: loops automáticos só propõem
 
-- **Status:** aceita
+- **Status:** aceita; em parte substituída pela [ADR 0008](0008-captura-automatica-e-aplicacao-por-risco.md)
 - **Data:** 2026-11-19
 
 ## Contexto

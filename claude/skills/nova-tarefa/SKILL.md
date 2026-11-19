@@ -7,7 +7,7 @@ description: Escreve uma tarefa para o executor autônomo do cérebro de trabalh
 
 Uma tarefa autônoma só dá certo se o critério de pronto for verificável por máquina. Responda em português do Brasil.
 
-1. Entenda o pedido. Leia `config/autonomia.json` do vault para saber quais repos o executor pode usar, com que nível e qual comando de verificação.
+1. Entenda o pedido. Leia `config/cerebro.json` do vault para saber quais repos o executor pode usar, com que nível e qual comando de verificação.
 2. Se o repo não estiver lá, diga ao dono e pergunte se quer adicionar (caminho, branch base, nível, comando de verificação, comandos permitidos). Nível 0 = só plano; 1 = implementa em branch local; 2 = também faz push da branch e abre PR em rascunho. Merge nunca é automático.
 3. Use o subagente `planejador` para escrever a especificação no formato de `templates/tarefa.md`.
 4. Revise os critérios de pronto com o dono: cada um precisa ser checável por comando, teste ou comportamento observável. "Ficar bom" não é critério.

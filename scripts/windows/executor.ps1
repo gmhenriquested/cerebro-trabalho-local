@@ -3,13 +3,13 @@
 #   implementar -> verificar (comando objetivo, fora do modelo) -> corrigir (até N tentativas)
 #   -> revisor independente (outro claude, só leitura) -> relatório + retro -> status "revisar"
 # Nunca faz merge. Push da branch + PR em rascunho só no nível 2.
-# Liga/desliga e limites em <vault>\config\autonomia.json  ("executor.ativo": true).
+# Liga/desliga e limites em <vault>\config\cerebro.json  ("executor.ativo": true).
 param([string]$Tarefa = "", [switch]$Simular)
 $ErrorActionPreference = "Continue"
 . (Join-Path $PSScriptRoot "lib.ps1")
 
-$cfgArq = Join-Path $Vault "config\autonomia.json"
-if (-not (Test-Path $cfgArq)) { Write-CerebroLog "Executor" "sem config/autonomia.json"; exit 0 }
+$cfgArq = Join-Path $Vault "config\cerebro.json"
+if (-not (Test-Path $cfgArq)) { Write-CerebroLog "Executor" "sem config/cerebro.json"; exit 0 }
 $cfg = (Read-Arquivo $cfgArq) | ConvertFrom-Json
 if (-not $cfg.executor.ativo -and -not $Tarefa) { Write-CerebroLog "Executor" "desligado (executor.ativo=false)"; exit 0 }
 if (-not (Enter-Trava "executor")) { Write-CerebroLog "Executor" "já rodando"; exit 0 }
@@ -48,7 +48,7 @@ try {
     $repoNome = $fm["repo"]
     $repo = $cfg.repos.$repoNome
     if (-not $repo) {
-      Set-Status $arq "bloqueada"; Add-Secao $arq "## Relatório do executor ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))`nRepo ``$repoNome`` não está na lista de config/autonomia.json."
+      Set-Status $arq "bloqueada"; Add-Secao $arq "## Relatório do executor ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))`nRepo ``$repoNome`` não está na lista de config/cerebro.json."
       $resumo += "- [[$slug]]: bloqueada (repo fora da lista)"; continue
     }
     $nivel = [Math]::Min([int]$repo.nivel, [int]$(if ($fm["nivel"]) { $fm["nivel"] } else { $repo.nivel }))

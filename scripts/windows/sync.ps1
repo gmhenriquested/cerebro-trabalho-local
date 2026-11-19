@@ -1,7 +1,7 @@
 ﻿# Commit + pull --rebase + push do vault.
 #   Hook Stop       -> sync.ps1 -Origem Stop          (relança em segundo plano)
 #   Hook SessionEnd -> sync.ps1 -Origem SessionEnd -Worker
-#   Loops           -> sync.ps1 -Origem Loop -Worker
+#   Loops/colhedor  -> sync.ps1 -Origem Loop|Colhedor -Worker
 param(
   [string]$Origem = "Stop",
   [switch]$Worker
@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = "SilentlyContinue"
 . (Join-Path $PSScriptRoot "lib.ps1")
 if ([Console]::IsInputRedirected -and -not $Worker) { [void][Console]::In.ReadToEnd() }
-if ($env:CEREBRO_LOOP -eq "1" -and $Origem -ne "Loop") { exit 0 }
+if ($env:CEREBRO_LOOP -eq "1" -and $Origem -in @("Stop", "SessionEnd")) { exit 0 }
 
 if (-not $Worker) {
   Start-Process -WindowStyle Hidden -FilePath "powershell" -ArgumentList @(

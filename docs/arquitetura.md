@@ -11,7 +11,8 @@ flowchart TB
     S -->|subagentes| AG[curador, triagem, enriquecedor, ata,\npesquisador, planejador, revisor-codigo, verificador]
     S -->|skills| SK[/capturar /processar-inbox /construir\n/nova-tarefa /revisar-propostas/]
     S --> G1{{PreToolUse: guarda}}
-    S --> H2[Stop: lembrete + sync]
+    S --> H2[Stop / PreCompact / SessionEnd:\ncolhedor em segundo plano + sync]
+    H2 --> N
   end
   subgraph Vault["Vault (Obsidian + git privado)"]
     I[inbox/] --> N[notas/ projetos/ decisoes/ memory/]
@@ -32,6 +33,29 @@ flowchart TB
   T -->|você revisa e mescla| WT
 ```
 
+## Sem ritual: o cérebro se mantém sozinho
+
+Quem usa o Claude Code no dia a dia manda o prompt e segue. Por isso nada essencial depende de você lembrar de rodar alguma coisa (ADR 0008):
+
+| Momento | O que acontece sozinho | Você faz |
+|---|---|---|
+| Durante a sessão | A cada ~8 turnos, antes de compactar o contexto e no fim da sessão, o **colhedor** lê o trecho novo da conversa em segundo plano e grava status de projeto, aprendizados, pessoas e tarefas | nada |
+| Fim de cada turno | O **sync** faz commit e push do vault | nada |
+| 19h | O **noturno** arquiva o que tem destino óbvio no inbox e enriquece notas marcadas | nada |
+| Sexta 17h | O **semanal** conserta links, índices e frontmatter, revisa o que foi aplicado sozinho e escreve o resumo | ler o resumo, se quiser |
+| Início de sessão | O Claude vê as propostas pendentes e, **depois da primeira tarefa**, oferece aprovar numa pergunta de múltipla escolha (no máximo 1x por dia) | um clique |
+
+**O que é aplicado sozinho e o que vira proposta:**
+
+| Aplica sozinho (baixo risco) | Vira proposta (muda comportamento ou é sensível) |
+|---|---|
+| status e próximos passos em `projetos/` | memória sobre você (preferência, correção) |
+| anexos e notas novas em `notas/`, `referencias/`, `pessoas/`, `reunioes/` | ADR em `decisoes/` |
+| itens no `inbox/`, tarefas em `rascunho` | agentes, skills, `CLAUDE.md`, prompts |
+| links, `indice.md`, linhas do `MEMORY.md` | `config/`, `templates/`, `evals/`, apagar coisas |
+
+A fronteira é garantida pela `guarda.ps1` (variável `CEREBRO_ESCRITA=auto`), não pelo prompt. Tudo vai para o git em commits separados e aparece na seção `## Aplicado automaticamente` dos relatórios em `propostas/`.
+
 ## As 5 camadas
 
 | # | Camada | Pergunta que responde | Peças |
@@ -40,7 +64,7 @@ flowchart TB
 | 2 | Loops | O que roda sozinho e quando? | `loop-*.ps1` + Agendador de Tarefas |
 | 3 | Grafo | Como os agentes passam trabalho entre si? | `/processar-inbox`, `/construir`, executor (implementar -> verificar -> revisar) |
 | 4 | Autoaperfeiçoamento | Como o sistema aprende com os erros? | `loop-reflexao`, `/revisar-propostas`, evals, métricas |
-| 5 | Execução autônoma | Como um agente entrega trabalho de verdade sem supervisão, com segurança? | `tarefas/`, `executor.ps1`, `config/autonomia.json`, `guarda.ps1` |
+| 5 | Execução autônoma | Como um agente entrega trabalho de verdade sem supervisão, com segurança? | `tarefas/`, `executor.ps1`, `config/cerebro.json`, `guarda.ps1` |
 
 ## Padrões que o kit aplica
 
@@ -63,7 +87,8 @@ flowchart TB
 - *Orçamento:* `--max-turns`, tempo máximo no agendador e uma tarefa por rodada por padrão.
 
 **Aprendizado**
-- *Humano no portão:* tudo que é automático escreve em `propostas/`; você aprova.
+- *Captura implícita:* o colhedor tira o aprendizado da própria conversa; não depende de você pedir.
+- *Humano no portão para o que importa:* o automático aplica só baixo risco; o que muda comportamento vira proposta de um clique.
 - *Várias fontes de sinal:* suas correções nas conversas, as retros que o executor escreve no fim de cada tarefa e os motivos das suas recusas.
 - *Correção vira teste:* erro que pode voltar vira caso em `evals/casos/`. Mudança em agente ou prompt roda os evals antes e depois (LLM como juiz, nota de 0 a 10, histórico com hash da versão).
 - *Métricas:* taxa de aprovação das propostas e notas dos evals entram no resumo semanal. Loop com muita recusa tem o prompt ajustado.
@@ -80,7 +105,7 @@ flowchart TB
 | `tarefas/` | Fila do executor + relatórios | você (`/nova-tarefa`), executor |
 | `propostas/` | Saída dos loops, `metricas.csv` | loops |
 | `evals/` | Casos, resultados, histórico | você, `evals.ps1` |
-| `config/` | `autonomia.json` | você |
+| `config/` | `cerebro.json` | você |
 | `templates/` | nota, projeto, adr, ata, tarefa, CLAUDE-projeto | você |
 
 Frontmatter que move o pipeline: `status` (inbox, rascunho, enriquecida, estavel), `enriquecer: true`, `revisado_em`.
@@ -100,7 +125,7 @@ tarefas/x.md (status: pronta)
   -> proposta em propostas/ avisando
 ```
 
-A retro alimenta o loop de reflexão: contexto que faltou vira memória ou nota de projeto, comando que faltou vira sugestão para `autonomia.json`, critério mal escrito vira melhoria no template.
+A retro alimenta o loop de reflexão: contexto que faltou vira memória ou nota de projeto, comando que faltou vira sugestão para `cerebro.json`, critério mal escrito vira melhoria no template.
 
 ## Vibe coding com rede de proteção
 

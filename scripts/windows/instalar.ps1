@@ -38,7 +38,7 @@ Get-ChildItem $origemVault -Recurse -Force -File | ForEach-Object {
 if (-not (Test-Path (Join-Path $Vault ".git"))) {
   git -C $Vault init -q -b main
   git -C $Vault add -A
-  git -C $Vault commit -q -m "Cérebro de trabalho: estrutura inicial (cerebro-trabalho-kit)"
+  git -C $Vault commit -q -m "Cérebro de trabalho: estrutura inicial (cerebro-trabalho-local)"
   Passo "git iniciado no vault (crie um repo PRIVADO e rode: git -C `"$Vault`" remote add origin <url>)"
 }
 
@@ -58,6 +58,7 @@ foreach ($tipo in @("agents", "skills")) {
 # 3. Scripts + config
 New-Item -ItemType Directory -Force -Path $Destino | Out-Null
 Copy-Item (Join-Path $Kit "scripts\windows\*") $Destino -Recurse -Force
+Remove-Item (Join-Path $Destino "stop-lembrete.ps1") -Force -ErrorAction SilentlyContinue
 $cfg = "# Gerado pelo instalador em $(Get-Date -Format 'yyyy-MM-dd')`r`n`$Vault = '$Vault'`r`n`$ClaudeExe = '$claudeExe'`r`n"
 [System.IO.File]::WriteAllText((Join-Path $Destino "config.ps1"), $cfg, (New-Object System.Text.UTF8Encoding $true))
 Passo "scripts em $Destino"
@@ -67,8 +68,9 @@ $d = ($Destino -replace '\\', '/')
 function Cmd([string]$script, [string]$args2 = "") { return "powershell -NoProfile -ExecutionPolicy Bypass -File `"$d/$script`" $args2".Trim() }
 $hooks = [ordered]@{
   SessionStart = @(@{ hooks = @(@{ type = "command"; command = (Cmd "session-start.ps1"); timeout = 30 }) })
-  Stop         = @(@{ hooks = @(@{ type = "command"; command = (Cmd "stop-lembrete.ps1") }, @{ type = "command"; command = (Cmd "sync.ps1" "-Origem Stop") }) })
-  SessionEnd   = @(@{ hooks = @(@{ type = "command"; command = (Cmd "sync.ps1" "-Origem SessionEnd -Worker"); timeout = 60 }) })
+  Stop         = @(@{ hooks = @(@{ type = "command"; command = (Cmd "colhedor.ps1" "-Evento Stop"); timeout = 15 }, @{ type = "command"; command = (Cmd "sync.ps1" "-Origem Stop"); timeout = 15 }) })
+  PreCompact   = @(@{ hooks = @(@{ type = "command"; command = (Cmd "colhedor.ps1" "-Evento PreCompact"); timeout = 15 }) })
+  SessionEnd   = @(@{ hooks = @(@{ type = "command"; command = (Cmd "colhedor.ps1" "-Evento SessionEnd"); timeout = 15 }, @{ type = "command"; command = (Cmd "sync.ps1" "-Origem SessionEnd -Worker"); timeout = 60 }) })
   PreToolUse   = @(@{ matcher = "Bash|PowerShell|Write|Edit|MultiEdit"; hooks = @(@{ type = "command"; command = (Cmd "guarda.ps1"); timeout = 15 }) })
 }
 $settingsArq = Join-Path $ClaudeDir "settings.json"
@@ -115,7 +117,7 @@ if (-not $SemAgendar) {
       Aviso "não consegui agendar $($l.Nome) ($($_.Exception.Message)). Rode na mão: powershell -File `"$Destino\$($l.Script)`""
     }
   }
-  Aviso "O executor autônomo fica DESLIGADO até você editar $Vault\config\autonomia.json."
+  Aviso "O executor autônomo fica DESLIGADO até você editar $Vault\config\cerebro.json."
 }
 
 Write-Host ""

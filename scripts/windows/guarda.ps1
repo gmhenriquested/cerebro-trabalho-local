@@ -54,9 +54,15 @@ if ($ferramenta -in @("Write", "Edit", "MultiEdit")) {
   if ($autonomo) {
     $vaultNorm = ($Vault -replace '/', '\').TrimEnd('\') + '\'
     $arqNorm = $arquivo -replace '/', '\'
-    if ($arqNorm.StartsWith($vaultNorm, [StringComparison]::OrdinalIgnoreCase) -and
-        $arqNorm -notmatch '\\(propostas|inbox|tarefas)\\') {
-      Bloquear "agente autônomo só escreve em propostas/, inbox/ ou tarefas/ do vault"
+    if ($arqNorm.StartsWith($vaultNorm, [StringComparison]::OrdinalIgnoreCase)) {
+      $relVault = $arqNorm.Substring($vaultNorm.Length)
+      $livre = '^(propostas|inbox|tarefas)\\'
+      # Modo de escrita automática (colhedor, noturno, semanal): também o que é de baixo risco.
+      $auto = '^((notas|projetos|pessoas|referencias|reunioes)\\|indice\.md$|memory\\MEMORY\.md$)'
+      $ok = ($relVault -match $livre) -or ($env:CEREBRO_ESCRITA -eq "auto" -and $relVault -match $auto)
+      if (-not $ok) {
+        Bloquear "em modo automático só se escreve em áreas de baixo risco do vault ($relVault é com o dono presente; vire proposta)"
+      }
     }
   }
 }

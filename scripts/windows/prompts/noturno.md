@@ -11,16 +11,23 @@ Para cada item:
 - **ambíguo** (pode ir para dois lugares, parece decisão, parece memória sobre o dono, ou você não entendeu): não mexa no item e escreva uma proposta;
 - tarefas sempre com `status: rascunho`. Quem libera é o dono.
 
-## Parte 2: enriquecimento
+## Parte 2: pedir pesquisas para as notas marcadas
+Você não tem web. A pesquisa roda depois, num agente separado que não vê o vault e só recebe as perguntas que você escrever. O script grava o resultado na nota sozinho.
+
 Para cada nota marcada com `enriquecer: true`:
-- leia a nota e as ligadas a ela;
-- pesquise o que falta (WebSearch/WebFetch) com fonte primária: documentação oficial, repositório, changelog;
-- NUNCA coloque na busca nome de cliente, projeto interno, pessoa, sistema interno ou número da empresa. Generalize a pergunta;
-- APLIQUE: acrescente no fim da nota uma seção `## Enriquecimento (AAAA-MM-DD)` com o conteúdo curto, separando fato com fonte de inferência sua, e a lista de fontes; troque `enriquecer: true` por `enriquecer: false`, `status: enriquecida` e `revisado_em` com a data de hoje;
-- se não achou nada confiável, não mexa na nota e diga isso no relatório.
+- leia a nota e as ligadas a ela e descubra o que falta;
+- escreva até 3 perguntas técnicas e genéricas, que façam sentido para qualquer pessoa de fora da empresa;
+- NUNCA coloque na pergunta nome de cliente, projeto interno, pessoa, sistema interno, número ou trecho da nota. Generalize;
+- não edite a nota: o script faz isso com o resultado da pesquisa;
+- se não há o que pesquisar, não peça nada e diga isso no relatório.
 
 ## Saída
-Se não fez nada nem tem proposta: `SEM_PROPOSTAS`.
+Se pediu pesquisas, comece por esta seção (o script a lê e tira do relatório), uma linha por pergunta, com o caminho exato da nota:
+
+## Pesquisas pedidas
+- notas/x.md :: pergunta genérica
+
+Se não fez nada, não pediu pesquisa nem tem proposta: `SEM_PROPOSTAS`.
 
 Senão, só isto:
 
@@ -29,7 +36,6 @@ Senão, só isto:
 ## Aplicado automaticamente
 - **Status:** aplicada-auto (AAAA-MM-DD)
 - `inbox/x.md` -> `projetos/y.md`: o que foi feito, em uma linha
-- `notas/z.md`: enriquecida com <assunto> (N fontes)
 
 ## P1 · <ação curta>
 - **Status:** pendente

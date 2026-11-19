@@ -41,7 +41,7 @@ Quem usa o Claude Code no dia a dia manda o prompt e segue. Por isso nada essenc
 |---|---|---|
 | Durante a sessão | A cada ~8 turnos, antes de compactar o contexto e no fim da sessão, o **colhedor** lê o trecho novo da conversa em segundo plano e grava status de projeto, aprendizados, pessoas e tarefas | nada |
 | Fim de cada turno | O **sync** faz commit e push do vault | nada |
-| 19h | O **noturno** arquiva o que tem destino óbvio no inbox e enriquece notas marcadas | nada |
+| 19h | O **noturno** arquiva o que tem destino óbvio no inbox e enriquece notas marcadas (a pesquisa na web roda num agente separado, que não vê o vault) | nada |
 | Sexta 17h | O **semanal** conserta links, índices e frontmatter, revisa o que foi aplicado sozinho e escreve o resumo | ler o resumo, se quiser |
 | Início de sessão | O Claude vê as propostas pendentes e, **depois da primeira tarefa**, oferece aprovar numa pergunta de múltipla escolha (no máximo 1x por dia) | um clique |
 
@@ -76,6 +76,9 @@ A fronteira é garantida pela `guarda.ps1` (variável `CEREBRO_ESCRITA=auto`), n
 **Ferramentas e segurança**
 - *Menor privilégio:* cada agente declara só as ferramentas de que precisa. Os loops rodam com `--permission-mode dontAsk`, uma lista explícita em `--allowedTools`, `--setting-sources user` (um repositório não amplia permissões) e uma config de segurança própria (`loop-settings.json`, com a guarda e regras `deny`).
 - *Pastas permitidas por papel:* a guarda só deixa o agente autônomo escrever dentro das suas raízes: o worktree, no caso do executor; as áreas liberadas do vault, no caso do colhedor, do noturno e do semanal. Ela falha fechado: se não conseguir decidir, nega.
+- *Web separada do vault:* o noturno, que lê o vault, não tem web. Ele escreve perguntas genéricas; o script filtra pelos termos internos e chama um pesquisador que só tem busca, numa pasta vazia. O próprio script anexa o resultado na nota (ADR 0010).
+- *Tarefa decidida pelo resultado:* a guarda simula a edição de uma tarefa e só deixa passar se o arquivo continuar em `rascunho`. Tarefa que já é do dono não é tocada por agente.
+- *Executor sem CI nem hooks:* em modo autônomo a guarda nega `.github`, `.husky`, `.vscode`, `package.json` e parecidos; o executor confere o diff e não verifica nem dá push se a branch mexer neles. A verificação roda sem variáveis de credencial.
 - *Limite honesto:* comandos como `npm test` executam scripts do próprio repositório, que o agente pode editar. Ou seja, no nível 1 o executor consegue rodar código com o seu usuário. Para isolamento de verdade, rode o executor no WSL2 (com o sandbox nativo do Claude Code) ou com outro usuário do Windows sem credenciais. Ver ADR 0005.
 - *Guardas determinísticas:* regras que não podem falhar ficam em hook (`guarda.ps1`), não em prompt. O prompt pede; o hook garante.
 - *Isolamento:* o trabalho autônomo acontece num `git worktree` com branch própria, em `%LOCALAPPDATA%\cerebro\worktrees` (fora de `~/.claude`). A sua cópia de trabalho não é tocada. Uma tarefa que volta para ajuste reaproveita a branch. O worktree é removido sozinho quando a tarefa vira `feita` ou `recusada`.

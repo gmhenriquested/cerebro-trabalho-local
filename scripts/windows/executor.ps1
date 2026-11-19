@@ -4,6 +4,8 @@
 #   -> corrigir com o modelo de escalada ("executor_escalar") até N tentativas
 #   -> revisor independente (outro claude, só leitura) -> relatório + retro -> status
 # O agente só escreve dentro do worktree (a guarda nega o resto, inclusive o vault).
+# A verificação roda sem variáveis de ambiente com cara de credencial e não roda se a branch
+# mexer em arquivo que executa código sozinho (CI, hooks, scripts do npm): aí fica com o dono.
 # Nunca faz merge. Push da branch + PR em rascunho só no nível 2.
 # Liga/desliga e limites em <vault>\config\cerebro.json ("executor.ativo": true).
 param([string]$Tarefa = "", [switch]$Simular)
@@ -30,13 +32,34 @@ function Invoke-Git([string]$Dir, [string[]]$Args2) {
   if ($out) { Write-CerebroLog "Executor" ("git {0}: {1}" -f ($Args2 -join ' '), $out.Substring(0, [Math]::Min(300, $out.Length))) }
   return ($LASTEXITCODE -eq 0)
 }
+# Variáveis que não entram na verificação: o código testado foi escrito pelo agente.
+$varSegredo = '(?i)(token|secret|senha|passw|_pwd$|_key$|apikey|api_key|credential|^AWS_|^AZURE_|^ARM_|^GH_|^GITHUB_|^GITLAB_|^ANTHROPIC_|^OPENAI_|^NPM_|^NUGET_|^CLAUDE_CODE_)'
+# Mesmo critério da guarda (caminho relativo, com /): arquivos que fazem código rodar sozinho.
+$arqExecuta = '(^|/)(\.git|\.github|\.husky|\.vscode|\.idea|\.claude|\.devcontainer|\.circleci|\.gitlab)(/|$)|(^|/)(package\.json|\.npmrc|\.yarnrc(\.yml)?|\.pnpmfile\.cjs|\.gitattributes|\.gitmodules|\.gitlab-ci\.yml|azure-pipelines\.yml|Makefile|Directory\.Build\.(props|targets)|nuget\.config|global\.json)$'
+
+function Get-ArquivosSensiveis([string]$Wt, [string]$Ref) {
+  $nomes = @(& git -C $Wt diff --name-only "$Ref...HEAD" 2>$null | ForEach-Object { [string]$_ })
+  return @($nomes | Where-Object { $_ -match $arqExecuta })
+}
+
 function Invoke-Verificacao([string]$Dir, [string]$Comando) {
   if (-not $Comando) { return @{ ok = $true; saida = "(sem comando de verificação configurado)" } }
+  $guardadas = @{}
+  foreach ($v in @(Get-ChildItem env:)) {
+    if ($v.Name -match $varSegredo) {
+      $guardadas[$v.Name] = $v.Value
+      Remove-Item -LiteralPath ("env:" + $v.Name) -ErrorAction SilentlyContinue
+    }
+  }
   Push-Location -LiteralPath $Dir
   try {
     $out = (cmd /c "$Comando 2>&1" | Out-String)
     $ok = ($LASTEXITCODE -eq 0)
-  } finally { Pop-Location }
+  } finally {
+    Pop-Location
+    foreach ($k in $guardadas.Keys) { Set-Item -LiteralPath ("env:" + $k) -Value $guardadas[$k] }
+  }
+  if ($guardadas.Count -gt 0) { Write-CerebroLog "Executor" ("verificação sem {0} variável(is) de credencial" -f $guardadas.Count) }
   if ($out.Length -gt 8000) { $out = "..." + $out.Substring($out.Length - 8000) }
   return @{ ok = $ok; saida = (Hide-Segredos $out) }
 }
@@ -143,6 +166,12 @@ try {
       if (& git -C $wt status --porcelain) {
         [void](Invoke-Git $wt @("add", "-A")); [void](Invoke-Git $wt @("commit", "-q", "-m", "agente: $slug (tentativa $i)"))
       }
+      $sensiveis = @(Get-ArquivosSensiveis $wt $ref)
+      if ($sensiveis.Count -gt 0) {
+        $verif = @{ ok = $false; saida = ("Verificação NÃO rodada: a branch mexe em arquivo que executa código sozinho ({0}). Confira a mudança e rode a verificação você." -f ($sensiveis -join ", ")) }
+        Write-CerebroLog "Executor" "$slug mexeu em arquivo sensível: $($sensiveis -join ', ')"
+        break
+      }
       $verif = Invoke-Verificacao $wt ([string]$repo.verificar)
       if ($verif.ok) { break }
       $feedback = $verif.saida
@@ -162,7 +191,7 @@ try {
     }
 
     $link = ""
-    if ($nivel -ge 2 -and $verif.ok -and $veredito -eq "aprovar") {
+    if ($nivel -ge 2 -and $verif.ok -and $veredito -eq "aprovar" -and @(Get-ArquivosSensiveis $wt $ref).Count -eq 0) {
       if (Invoke-Git $wt @("push", "-q", "-u", "origin", $branch)) {
         if (Get-Command gh -ErrorAction SilentlyContinue) {
           Push-Location -LiteralPath $wt

@@ -6,7 +6,8 @@
 # Modo autônomo (CEREBRO_LOOP=1, ligado pelo Invoke-Claude): mais rígido e FALHA FECHADO.
 #   - escrita só dentro de CEREBRO_RAIZES (o worktree do executor ou o vault);
 #   - no vault, só áreas liberadas (e as de baixo risco com CEREBRO_ESCRITA=auto);
-#   - nunca muda tarefa para "pronta" ou "feita";
+#   - tarefa: só cria ou edita em rascunho, e o resultado da edição (simulado aqui) continua rascunho;
+#   - não escreve em arquivo que executa código sozinho (.github, .husky, .vscode, package.json...);
 #   - busca na web não pode levar termos de config/termos-internos.txt.
 $autonomo = ($env:CEREBRO_LOOP -eq "1")
 try {
@@ -39,6 +40,39 @@ function Get-Caminho([string]$c) {
   if (-not $c) { return "" }
   if ($c.StartsWith('\\?\') -or $c.StartsWith('\\.\')) { Bloquear "caminho de dispositivo não permitido" }
   try { return [System.IO.Path]::GetFullPath(($c -replace '/', '\')).TrimEnd('\') } catch { Bloquear "caminho inválido" }
+}
+
+# Arquivos e pastas que fazem código rodar sem ninguém pedir (CI, hooks, tarefas da IDE, scripts do npm).
+# Em modo autônomo ficam com o dono: mudar um deles é mudar o que roda na verificação ou no CI.
+$executaSozinho = '\\(\.git|\.github|\.husky|\.vscode|\.idea|\.claude|\.devcontainer|\.circleci|\.gitlab)(\\|$)|\\(package\.json|\.npmrc|\.yarnrc(\.yml)?|\.pnpmfile\.cjs|\.gitattributes|\.gitmodules|\.gitlab-ci\.yml|azure-pipelines\.yml|Makefile|Directory\.Build\.(props|targets)|nuget\.config|global\.json)$'
+
+# Texto do arquivo depois da edição pedida, para decidir pelo resultado e não pelo trecho novo.
+# Devolve $null quando não dá para simular (a guarda então nega em modo autônomo).
+function Get-Troca([string]$Texto, [string]$Velho, [string]$Novo, [bool]$Todos) {
+  if (-not $Velho) { if (-not $Texto) { return $Novo }; return $null }
+  $i = $Texto.IndexOf($Velho, [StringComparison]::Ordinal)
+  if ($i -lt 0) { return $null }
+  if ($Todos) { return $Texto.Replace($Velho, $Novo) }
+  return $Texto.Substring(0, $i) + $Novo + $Texto.Substring($i + $Velho.Length)
+}
+function Get-TextoAposEdicao([string]$Ferr, [string]$Atual, $Entrada) {
+  if ($Ferr -eq "Write") { return [string]$Entrada.content }
+  if ($Ferr -eq "Edit") { return (Get-Troca $Atual ([string]$Entrada.old_string) ([string]$Entrada.new_string) ([bool]$Entrada.replace_all)) }
+  if ($Ferr -eq "MultiEdit") {
+    $t = $Atual
+    foreach ($e in @($Entrada.edits)) {
+      $t = Get-Troca $t ([string]$e.old_string) ([string]$e.new_string) ([bool]$e.replace_all)
+      if ($null -eq $t) { return $null }
+    }
+    return $t
+  }
+  return $null
+}
+function Get-StatusTarefa([string]$Texto) {
+  if (-not $Texto) { return "" }
+  $fm = Get-Frontmatter $Texto
+  if (-not $fm) { return "" }
+  return ([string]$fm["status"]).Trim().Trim('"', "'").ToLower()
 }
 
 $segredoArq = '(^|\\)(\.env(\.[\w-]+)?|id_rsa|id_ed25519|[^\\]*\.pem|[^\\]*\.pfx|[^\\]*\.key|credentials(\.json)?|\.credentials\.json|\.git-credentials|\.npmrc|\.netrc)$'
@@ -102,6 +136,9 @@ if ($ferramenta -in @("Write", "Edit", "MultiEdit", "NotebookEdit")) {
   }
 
   if ($autonomo) {
+    # 0. nada que faça código rodar sozinho (CI, hooks, scripts do npm)
+    if ($p -match $executaSozinho) { Bloquear "arquivo que executa código sozinho ($arquivo); descreva a mudança no relatório e o dono aplica" }
+
     # 1. só dentro das raízes do papel
     $raizes = @(($env:CEREBRO_RAIZES -split ';') | Where-Object { $_ })
     if ($raizes.Count -eq 0) { Bloquear "este papel não tem permissão de escrita" }
@@ -116,8 +153,16 @@ if ($ferramenta -in @("Write", "Edit", "MultiEdit", "NotebookEdit")) {
       $auto  = '^((notas|projetos|pessoas|referencias|reunioes)\\|indice\.md$|memory\\MEMORY\.md$)'
       $ok = ($rel -match $livre) -or ($env:CEREBRO_ESCRITA -eq "auto" -and $rel -match $auto)
       if (-not $ok) { Bloquear "em modo automático, $rel é só com o dono presente; vire proposta" }
-      if ($rel -match '^tarefas\\' -and $conteudo -match '(?m)^status:\s*(pronta|feita|fazendo)\b') {
-        Bloquear "só o dono libera ou fecha uma tarefa; use status: rascunho"
+      # Tarefa: decide pelo arquivo como ficaria depois da edição, não pelo trecho novo
+      # (um Edit que troca só "rascunho" por "pronta" não tem "status:" no trecho).
+      if ($rel -match '^tarefas\\' -and $rel -ne 'tarefas\README.md') {
+        $atual = ""
+        if (Test-Path -LiteralPath $p) { $atual = [System.IO.File]::ReadAllText($p, [System.Text.Encoding]::UTF8) }
+        $antes = Get-StatusTarefa $atual
+        if ($antes -and $antes -ne "rascunho") { Bloquear "a tarefa está com status $antes e já é do dono; em modo automático só se mexe em tarefa em rascunho" }
+        $depois = Get-TextoAposEdicao $ferramenta $atual $ti
+        if ($null -eq $depois) { Bloquear "não consegui conferir como a tarefa ficaria depois da edição" }
+        if ((Get-StatusTarefa $depois) -ne "rascunho") { Bloquear "tarefa criada ou editada em modo automático tem que ficar com status: rascunho; só o dono libera" }
       }
       if ($ferramenta -eq "Write" -and (Test-Path -LiteralPath $p) -and $rel -notmatch '^(propostas|inbox)\\') {
         Bloquear "não reescreva uma nota inteira em modo automático; use Edit para anexar"

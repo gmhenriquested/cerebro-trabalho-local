@@ -32,7 +32,7 @@ Ordem sugerida. Ligue uma etapa, use por alguns dias, só então siga.
 - [ ] Ter casos de eval para os agentes mais usados, para a cascata escolher o modelo por medida.
 
 ## Ideias para depois
-- **Executor isolado de verdade:** WSL2 com o sandbox nativo do Claude Code, ou um usuário Windows separado sem credenciais.
+- **Executor isolado de verdade:** WSL2 com o sandbox nativo do Claude Code, ou um usuário Windows separado sem credenciais. Hoje (ADR 0010) ele já não mexe em CI, hooks e `package.json` e verifica sem variáveis de credencial, mas os testes ainda rodam com o seu usuário.
 - **Saída estruturada:** `--json-schema` para o veredito do revisor, a nota do juiz e as propostas, no lugar das regex sobre texto.
 - **Hooks async nativos:** `async: true` nos hooks Stop e PreCompact, no lugar do `Start-Process`.
 - **Paralelismo:** `max_tarefas_por_rodada` maior roda em sequência; para paralelo, um processo por worktree (os worktrees já isolam).

@@ -92,7 +92,11 @@ Tudo em `<vault>\config\cerebro.json`: colhedor, revisão na sessão, loops liga
 
 - Um hook de guarda roda antes de cada ferramenta. Em modo automático, só deixa escrever nas pastas do papel e nega quando está em dúvida.
 - Os loops usam uma config de segurança própria e ignoram as configs de projeto dos repositórios.
-- O executor trabalha num worktree fora da sua cópia de trabalho, e o merge é sempre seu. **Limite honesto:** testes e builds rodam código do repositório com o seu usuário. Para isolamento total, rode o executor no WSL2 ou com outro usuário (ADR 0005).
+- Agente sem você nunca libera tarefa: a guarda simula a edição e só aceita se a tarefa continuar em rascunho.
+- O loop que lê o vault não tem web, e o que pesquisa na web não vê o vault: só recebe perguntas genéricas, filtradas pelos termos internos (ADR 0010).
+- O executor trabalha num worktree fora da sua cópia de trabalho, e o merge é sempre seu. Ele não mexe em CI, hooks nem `package.json`, e a verificação roda sem variáveis de credencial. **Limite honesto:** testes e builds rodam código do repositório com o seu usuário. Para isolamento total, rode o executor no WSL2 ou com outro usuário (ADR 0005).
+- O remoto do vault tem que ser **privado e só seu**: quem dá push nele controla a configuração do executor.
+- Para conferir a guarda no seu Windows: `scripts\windows\testar-guarda.ps1`.
 
 ## Créditos e inspiração
 

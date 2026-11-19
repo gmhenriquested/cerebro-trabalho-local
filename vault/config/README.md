@@ -20,7 +20,7 @@ Liga ou desliga cada loop agendado (`reflexao`, `noturno`, `semanal`) sem mexer 
 Qual modelo cada papel usa (ADR 0009).
 - `padrao`: modelo de qualquer papel não listado.
 - `escada`: do mais barato para o mais forte; usada pelos evals e pela escalada do executor. Pode incluir outros apelidos aceitos pelo `claude --model`.
-- `papeis`: loops e etapas (`colhedor`, `noturno`, `semanal`, `reflexao`, `juiz`, `executor`, `executor_escalar` na nova tentativa, `revisor_executor`).
+- `papeis`: loops e etapas (`colhedor`, `noturno`, `pesquisa_web` para a pesquisa isolada do noturno, `semanal`, `reflexao`, `juiz`, `executor`, `executor_escalar` na nova tentativa, `revisor_executor`).
 - `agentes`: subagentes; o SessionStart grava o modelo no frontmatter de cada um sozinho quando este arquivo muda.
 
 ### evals
@@ -41,4 +41,4 @@ Controla o executor autônomo (`executor.ps1`).
   - `verificar`: comando que o executor roda FORA do modelo para ter evidência objetiva (testes, build). Sem ele, a tarefa vale pouco.
   - `comandos_permitidos`: prefixos de terminal que o agente pode rodar (viram `Bash(<prefixo>:*)`, ou `PowerShell(...)` sem Git Bash). Os outros comandos são negados, **mas** comandos como `npm test` rodam scripts do próprio repositório, que o agente pode editar: trate o nível 1 como "executa código com o seu usuário" (ver ADR 0005). Comece pequeno; o loop de reflexão sugere o que falta a partir das retros.
 
-O hook `guarda.ps1` vale por cima de tudo. Em modo autônomo bloqueia push, merge, reset, publish e infraestrutura. No vault, o executor só escreve em `propostas/`, `inbox/` e `tarefas/`. O colhedor, o noturno e o semanal (modo de escrita automática) também podem escrever em `notas/`, `projetos/`, `pessoas/`, `referencias/`, `reunioes/`, `indice.md` e `memory/MEMORY.md`. Memórias, `decisoes/`, `CLAUDE.md`, `config/`, `templates/` e `evals/` só mudam com você presente.
+O hook `guarda.ps1` vale por cima de tudo. Em modo autônomo bloqueia push, merge, reset, publish e infraestrutura. No vault, o executor só escreve em `propostas/`, `inbox/` e `tarefas/`. O colhedor, o noturno e o semanal (modo de escrita automática) também podem escrever em `notas/`, `projetos/`, `pessoas/`, `referencias/`, `reunioes/`, `indice.md` e `memory/MEMORY.md`. Memórias, `decisoes/`, `CLAUDE.md`, `config/`, `templates/` e `evals/` só mudam com você presente. Em `tarefas/`, agente sem você só cria ou edita rascunho. No repositório, o executor não mexe em CI, hooks do git, `package.json` e parecidos (ADR 0010).

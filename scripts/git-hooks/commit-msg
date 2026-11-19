@@ -1,0 +1,3 @@
+#!/bin/sh
+# Trava do kit: confere termos internos da empresa na mensagem do commit.
+exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(git rev-parse --show-toplevel)/scripts/windows/checar-termos.ps1" -Mensagem "$1"

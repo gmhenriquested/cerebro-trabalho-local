@@ -152,6 +152,13 @@ if (-not $SemAgendar) {
   Aviso "O executor autônomo fica DESLIGADO até você editar $Vault\config\cerebro.json (executor.ativo)."
 }
 
+# 8. Trava do kit público: se o kit é um clone git, todo commit nele passa pela conferência
+#    dos termos internos do vault (nada da empresa vai para o repositório público).
+if (Test-Path (Join-Path $Kit ".git")) {
+  git -C $Kit config core.hooksPath scripts/git-hooks
+  Passo "trava de termos internos ligada nos commits do kit"
+}
+
 Write-Host ""
 Write-Host "Pronto. Próximos passos:" -ForegroundColor Green
 Write-Host "  1. Abra $Vault no Obsidian (Open folder as vault)."

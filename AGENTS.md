@@ -40,7 +40,7 @@ O dono vai pedir para você adaptar a arquitetura ao trabalho dele. Bom ponto de
 
 - `docs/roadmap.md` tem as melhorias já pensadas, em ordem.
 - Mudança de comportamento do kit (algo que valeria para qualquer pessoa): edite aqui no kit e registre um ADR em `docs/adr/`.
-- Mudança específica da empresa ou do dono (pastas, agentes do domínio, nomes): faça **no vault**, nunca no kit público.
+- Mudança específica da empresa ou do dono (pastas, agentes do domínio, nomes): faça **no vault**, nunca no kit público. Os hooks de `scripts/git-hooks` (ligados com `core.hooksPath`) bloqueiam commit no kit com termo de `config/termos-internos.txt`; não pule com `--no-verify`.
 - Ao criar agente novo, siga o formato de `claude/agents/` (frontmatter `name`, `description`, `tools`, `model`), dê o mínimo de ferramentas e escreva quando usar na `description`.
 - Ao criar loop novo, siga o padrão dos existentes: `Test-LoopAtivo`, trava contra execução dupla, `Invoke-Claude` da `lib.ps1` com `-Papel` (modelo e métricas) e `-Raizes` (onde pode escrever) (que liga `CEREBRO_LOOP=1` para silenciar os hooks de ritual), ferramentas mínimas, `-Escrita` só se for aplicar baixo risco, `Save-Resultado` para a saída (aplicado vai para o log do dia, pendente para `propostas/`), log em `cerebro.log`.
 - Scripts `.ps1` precisam funcionar no Windows PowerShell 5.1 e ser salvos em **UTF-8 com BOM** (sem BOM, acentos quebram no 5.1).

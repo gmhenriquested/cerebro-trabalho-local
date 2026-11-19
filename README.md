@@ -97,6 +97,7 @@ Tudo em `<vault>\config\cerebro.json`: colhedor, revisão na sessão, loops liga
 - O executor trabalha num worktree fora da sua cópia de trabalho, e o merge é sempre seu. Ele não mexe em CI, hooks nem `package.json`, e a verificação roda sem variáveis de credencial. **Limite honesto:** testes e builds rodam código do repositório com o seu usuário. Para isolamento total, rode o executor no WSL2 ou com outro usuário (ADR 0005).
 - O remoto do vault tem que ser **privado e só seu**: quem dá push nele controla a configuração do executor.
 - Para conferir a guarda no seu Windows: `scripts\windows\testar-guarda.ps1`.
+- **Trava do kit público:** o instalador liga hooks de git neste repositório que bloqueiam commit (arquivo, conteúdo ou mensagem) com qualquer termo de `config/termos-internos.txt` do seu vault. A lista nunca sai do vault. Num clone que já existia: `git config core.hooksPath scripts/git-hooks`.
 
 ## Créditos e inspiração
 

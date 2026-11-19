@@ -1,0 +1,20 @@
+{
+  "executor": {
+    "ativo": false,
+    "max_tarefas_por_rodada": 1,
+    "max_turnos": 80,
+    "tentativas": 2
+  },
+  "repos": {
+    "exemplo-api": {
+      "caminho": "C:/dev/exemplo-api",
+      "branch_base": "main",
+      "nivel": 1,
+      "verificar": "npm test",
+      "comandos_permitidos": [
+        "npm test", "npm run lint", "npm run build", "npx tsc",
+        "git status", "git diff", "git log", "git add", "git commit"
+      ]
+    }
+  }
+}

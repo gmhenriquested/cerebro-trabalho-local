@@ -29,8 +29,10 @@ Você foi chamado para **instalar**, **conferir** ou **aprimorar** este kit de c
 - Com propostas pendentes, abra uma sessão nova e peça qualquer coisa: depois dessa primeira tarefa o Claude deve oferecer a revisão de um clique.
 - Rode cada loop na mão uma vez (`loop-reflexao.ps1`, `loop-noturno.ps1`, `loop-semanal.ps1`) e confira o arquivo em `propostas/`.
 - Guarda: peça para rodar `git push --force` num repo qualquer; tem que ser bloqueado com a mensagem da guarda.
-- Evals: `evals.ps1` roda o caso de exemplo e grava em `evals/historico.csv`.
-- Executor: com `cerebro.json` apontando para um repo de teste em nível 0, rode `executor.ps1 -Tarefa <nome>` e leia o relatório no fim da tarefa. Os scripts nunca foram executados num Windows real antes da sua instalação: espere ajustes e corrija aqui no kit.
+- Evals: `evals.ps1` roda o caso de exemplo, grava em `evals/historico.csv` (com modelo) e, se um modelo mais barato passar, cria uma proposta do tipo `modelo`. Rodar de novo sem mudar nada deve usar só o cache.
+- Métricas: depois de qualquer loop, `metricas/loops.csv` tem uma linha com papel, modelo, custo e turnos.
+- Pontos a observar num Windows real: latência da guarda a cada ferramenta (antivírus corporativo), agendamento sem admin, ExecutionPolicy ou modo restrito do PowerShell imposto pela empresa, e se `--setting-sources user` ainda deixa o `--agent` dos evals achar o agente da pasta temporária.
+- Executor: com `config/cerebro.json` apontando para um repo de teste em nível 0, rode `executor.ps1 -Tarefa <nome>` e leia o relatório no fim da tarefa. Os scripts nunca foram executados num Windows real antes da sua instalação: espere ajustes e corrija aqui no kit.
 
 ## Aprimorar
 
@@ -40,6 +42,6 @@ O dono vai pedir para você adaptar a arquitetura ao trabalho dele. Bom ponto de
 - Mudança de comportamento do kit (algo que valeria para qualquer pessoa): edite aqui no kit e registre um ADR em `docs/adr/`.
 - Mudança específica da empresa ou do dono (pastas, agentes do domínio, nomes): faça **no vault**, nunca no kit público.
 - Ao criar agente novo, siga o formato de `claude/agents/` (frontmatter `name`, `description`, `tools`, `model`), dê o mínimo de ferramentas e escreva quando usar na `description`.
-- Ao criar loop novo, siga o padrão dos existentes: trava contra execução dupla, `Invoke-Claude` da `lib.ps1` (que liga `CEREBRO_LOOP=1` para silenciar os hooks de ritual), ferramentas mínimas, `-Escrita` só se for aplicar baixo risco, saída em `propostas/` com a seção `## Aplicado automaticamente`, log em `cerebro.log`.
+- Ao criar loop novo, siga o padrão dos existentes: `Test-LoopAtivo`, trava contra execução dupla, `Invoke-Claude` da `lib.ps1` com `-Papel` (modelo e métricas) e `-Raizes` (onde pode escrever) (que liga `CEREBRO_LOOP=1` para silenciar os hooks de ritual), ferramentas mínimas, `-Escrita` só se for aplicar baixo risco, `Save-Resultado` para a saída (aplicado vai para o log do dia, pendente para `propostas/`), log em `cerebro.log`.
 - Scripts `.ps1` precisam funcionar no Windows PowerShell 5.1 e ser salvos em **UTF-8 com BOM** (sem BOM, acentos quebram no 5.1).
 - Textos para pessoas: português claro, sem jargão, sem travessão.

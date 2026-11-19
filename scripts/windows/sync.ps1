@@ -8,7 +8,7 @@ param(
 )
 $ErrorActionPreference = "SilentlyContinue"
 . (Join-Path $PSScriptRoot "lib.ps1")
-if ([Console]::IsInputRedirected -and -not $Worker) { [void][Console]::In.ReadToEnd() }
+if (-not $Worker) { [void](Read-EntradaHook) }
 if ($env:CEREBRO_LOOP -eq "1" -and $Origem -in @("Stop", "SessionEnd")) { exit 0 }
 
 if (-not $Worker) {
@@ -23,6 +23,8 @@ if (-not (Enter-Trava "sync")) { Write-CerebroLog $Origem "sync já em andamento
 
 try {
   Set-Location $Vault
+  $env:GIT_TERMINAL_PROMPT = "0"   # nunca abrir janela de credencial a partir de processo oculto
+  $env:GCM_INTERACTIVE = "never"
   $branch = (git rev-parse --abbrev-ref HEAD).Trim()
   if ($branch -ne "main") { Write-CerebroLog $Origem "fora da main, pulando"; exit 0 }
 

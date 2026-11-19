@@ -2,11 +2,46 @@
   "colhedor": {
     "ativo": true,
     "a_cada_turnos": 8,
-    "minutos_minimos": 20
+    "minutos_minimos": 20,
+    "max_por_dia": 30
   },
   "revisao_na_sessao": {
     "ativo": true,
     "max_por_dia": 1
+  },
+  "loops": {
+    "reflexao": { "ativo": true },
+    "noturno": { "ativo": true },
+    "semanal": { "ativo": true }
+  },
+  "modelos": {
+    "padrao": "sonnet",
+    "escada": ["haiku", "sonnet", "opus"],
+    "papeis": {
+      "colhedor": "haiku",
+      "noturno": "sonnet",
+      "semanal": "sonnet",
+      "reflexao": "opus",
+      "juiz": "sonnet",
+      "executor": "sonnet",
+      "executor_escalar": "opus",
+      "revisor_executor": "opus"
+    },
+    "agentes": {
+      "triagem": "haiku",
+      "verificador": "haiku",
+      "curador": "sonnet",
+      "ata": "sonnet",
+      "enriquecedor": "sonnet",
+      "pesquisador": "sonnet",
+      "planejador": "opus",
+      "revisor-codigo": "opus"
+    }
+  },
+  "evals": {
+    "nota_minima": 8,
+    "max_chamadas": 40,
+    "validade_dias": 30
   },
   "executor": {
     "ativo": false,
@@ -21,7 +56,7 @@
       "nivel": 1,
       "verificar": "npm test",
       "comandos_permitidos": [
-        "npm test", "npm run lint", "npm run build", "npx tsc",
+        "npm test", "npm run lint", "npx tsc",
         "git status", "git diff", "git log", "git add", "git commit"
       ]
     }

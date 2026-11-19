@@ -73,9 +73,26 @@ Nada aqui é obrigatório, porque o automático cobre o dia a dia. Use quando qu
 | Pesquisa para uma nota | `enriquecer: true` no frontmatter |
 | Ver todas as propostas de uma vez | `/revisar-propostas` |
 
+## Modelo certo para cada tarefa
+
+Cada papel usa o modelo que faz sentido: barato e rápido para o colhedor, a triagem e a verificação; forte para o planejamento, a revisão de código e a reflexão. Tudo fica em `config/cerebro.json > modelos`.
+
+A escolha é ajustada por medida, sem gastar à toa:
+- **De graça:** toda chamada registra modelo, sucesso e custo. O semanal vê a tendência e propõe subir ou descer.
+- **Barato:** os evals só rodam quando um agente muda, usam cache e testam em cascata, começando pelo modelo mais barato e parando no primeiro que passa, com teto de chamadas.
+- **No executor:** se a primeira tentativa falha nos testes, a correção vai para um modelo mais forte.
+
+Toda troca vira proposta de um clique. O custo da semana aparece no resumo semanal.
+
 ## Configurar
 
-Tudo em `<vault>\config\cerebro.json`: frequência do colhedor, revisão na sessão, executor e lista de repositórios que agentes podem tocar. Ver `vault/config/README.md`.
+Tudo em `<vault>\config\cerebro.json`: colhedor, revisão na sessão, loops ligados, modelos, evals, executor e repositórios que agentes podem tocar. Nomes internos que nunca podem ir para buscas na web ficam em `config/termos-internos.txt`. Ver `vault/config/README.md`.
+
+## Segurança, em resumo
+
+- Um hook de guarda roda antes de cada ferramenta. Em modo automático, só deixa escrever nas pastas do papel e nega quando está em dúvida.
+- Os loops usam uma config de segurança própria e ignoram as configs de projeto dos repositórios.
+- O executor trabalha num worktree fora da sua cópia de trabalho, e o merge é sempre seu. **Limite honesto:** testes e builds rodam código do repositório com o seu usuário. Para isolamento total, rode o executor no WSL2 ou com outro usuário (ADR 0005).
 
 ## Créditos e inspiração
 

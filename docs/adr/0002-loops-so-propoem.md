@@ -12,4 +12,4 @@ Tudo que roda sem o dono presente (loops agendados, agentes de leitura) escreve 
 ## Consequências
 - O dono precisa revisar com frequência; propostas velhas aparecem no lint semanal.
 - Recusas viram sinal: com motivo, viram memória de feedback.
-- Os loops rodam com ferramentas só de leitura e hooks desligados.
+- (Superado pela ADR 0008: hoje os loops aplicam sozinhos o que é de baixo risco e dependem do hook de guarda, que continua ligado neles.)

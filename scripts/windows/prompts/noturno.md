@@ -7,7 +7,7 @@ Você tem escrita automática de baixo risco: pode gravar em `notas/`, `projetos
 ## Parte 1: triagem do inbox
 Para cada item:
 - procure com Grep se já existe nota sobre o assunto;
-- **destino óbvio** (anexar a um projeto ou nota que já existe, nota nova em `notas/` ou `referencias/`, pessoa, tarefa em rascunho): APLIQUE. Grave no destino com frontmatter completo e `[[links]]`, atualize o `indice.md` se criou nota nova, e escreva numa linha sozinha `ARQUIVADO: inbox/<arquivo>.md` (o script apaga o item do inbox depois);
+- **destino óbvio** (anexar a um projeto ou nota que já existe, nota nova em `notas/` ou `referencias/`, pessoa, tarefa em rascunho): APLIQUE. Grave no destino com frontmatter completo e `[[links]]`, atualize o `indice.md` se criou nota nova, e depois marque o item do inbox com `arquivado: true` no frontmatter (use Edit; o script apaga os itens marcados);
 - **ambíguo** (pode ir para dois lugares, parece decisão, parece memória sobre o dono, ou você não entendeu): não mexa no item e escreva uma proposta;
 - tarefas sempre com `status: rascunho`. Quem libera é o dono.
 
@@ -22,7 +22,7 @@ Para cada nota marcada com `enriquecer: true`:
 ## Saída
 Se não fez nada nem tem proposta: `SEM_PROPOSTAS`.
 
-Senão, só isto (as linhas `ARQUIVADO:` podem vir antes):
+Senão, só isto:
 
 # Noturno: AAAA-MM-DD
 

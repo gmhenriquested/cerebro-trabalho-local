@@ -1,0 +1,3 @@
+# Um termo por linha: nomes de clientes, projetos internos, sistemas, pessoas.
+# Em modo automático, a guarda bloqueia buscas na web que contenham qualquer um deles.
+# Linhas com # são ignoradas. Maiúsculas e minúsculas não importam.

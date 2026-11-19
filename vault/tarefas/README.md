@@ -13,9 +13,11 @@ Fila do executor (`executor.ps1`). Uma tarefa por arquivo, no formato de `templa
 | `rascunho` | escrita, ainda não liberada | você ou agentes |
 | `pronta` | liberada para o executor | **só você** |
 | `fazendo` | o executor está trabalhando | executor |
-| `revisar` | terminou, verificação ok; esperando sua revisão | executor |
-| `bloqueada` | falhou na verificação, o revisor bloqueou ou faltou config | executor |
+| `revisar` | terminou e a verificação passou; o revisor pode ter aprovado ou pedido ajuste (leia o relatório) | executor |
+| `bloqueada` | falhou na verificação, o revisor bloqueou, faltou config ou a execução foi interrompida | executor |
 | `feita` | você revisou e mesclou | você |
 | `recusada` | você descartou (anote o motivo) | você |
 
-O executor trabalha numa branch `agente/<tarefa>` dentro de um git worktree isolado e nunca faz merge. O relatório (o que fez, evidência, revisão independente e retro) é anexado no fim do arquivo da tarefa. Depois de revisar: `git worktree remove <caminho>`.
+O executor trabalha numa branch `agente/<tarefa>` dentro de um git worktree isolado em `%LOCALAPPDATA%\cerebro\worktrees\<tarefa>` e nunca faz merge. O relatório (o que fez, evidência, revisão independente e retro) é anexado no fim do arquivo da tarefa.
+
+Para pedir ajuste, escreva o que mudar no fim da tarefa e volte o status para `pronta`: a branch é reaproveitada. Quando você marca `feita` ou `recusada`, o worktree é removido sozinho na próxima rodada. Agentes nunca conseguem mudar uma tarefa para `pronta` ou `feita` (a guarda bloqueia).

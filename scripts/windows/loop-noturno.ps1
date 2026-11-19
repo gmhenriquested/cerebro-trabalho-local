@@ -4,6 +4,7 @@
 param([int]$MaxInbox = 15, [int]$MaxEnriquecer = 5)
 $ErrorActionPreference = "SilentlyContinue"
 . (Join-Path $PSScriptRoot "lib.ps1")
+if (-not (Test-LoopAtivo "noturno")) { exit 0 }
 if (-not (Enter-Trava "noturno")) { Write-CerebroLog "Noturno" "já rodando"; exit 0 }
 try {
   function Rel($f) { return $f.FullName.Substring($Vault.Length).TrimStart('\') -replace '\\', '/' }
@@ -28,19 +29,16 @@ try {
 
   $tools = "Read,Grep,Glob,Edit,Write"
   if ($marcadas.Count -gt 0) { $tools += ",WebSearch,WebFetch" }
-  $saida = Invoke-Claude -Prompt $prompt -Tools $tools -Escrita -MaxTurnos 80
+  $saida = Invoke-Claude -Prompt $prompt -Papel "noturno" -Tools $tools -Raizes @($Vault) -Escrita -MaxTurnos 80
 
-  # Itens que o Claude arquivou saem do inbox (só arquivos dentro de inbox/).
-  $inboxDir = (Join-Path $Vault "inbox").TrimEnd('\') + '\'
-  foreach ($m in [regex]::Matches($saida, '(?m)^ARQUIVADO:\s*(inbox/[^\s]+\.md)\s*$')) {
-    $alvo = Join-Path $Vault ($m.Groups[1].Value -replace '/', '\')
-    $cheio = [System.IO.Path]::GetFullPath($alvo)
-    if ($cheio.StartsWith($inboxDir, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path $cheio) -and $cheio -notmatch 'README\.md$') {
-      Remove-Item $cheio -Force
-      Write-CerebroLog "Noturno" "arquivado e removido do inbox: $($m.Groups[1].Value)"
+  # Itens que o Claude arquivou (frontmatter arquivado: true) saem do inbox.
+  foreach ($item in (Get-ChildItem (Join-Path $Vault "inbox") -Filter *.md | Where-Object { $_.Name -ne "README.md" })) {
+    $fmItem = Get-Frontmatter (Read-Arquivo $item.FullName)
+    if ($fmItem -and $fmItem["arquivado"] -eq "true") {
+      Remove-Item -LiteralPath $item.FullName -Force
+      Write-CerebroLog "Noturno" "arquivado e removido do inbox: $($item.Name)"
     }
   }
-  $saida = [regex]::Replace($saida, '(?m)^ARQUIVADO:.*\r?\n?', '')
-  Save-Proposta "noturno" $saida | Out-Null
+  Save-Resultado "noturno" $saida | Out-Null
   Sync-Vault "Loop"
 } finally { Exit-Trava "noturno" }

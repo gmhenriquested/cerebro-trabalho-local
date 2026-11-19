@@ -3,6 +3,7 @@
 # e pede ao Claude propostas de mudança em memória, agentes, skills, prompts, CLAUDE.md e evals.
 $ErrorActionPreference = "SilentlyContinue"
 . (Join-Path $PSScriptRoot "lib.ps1")
+if (-not (Test-LoopAtivo "reflexao")) { exit 0 }
 if (-not (Enter-Trava "reflexao")) { Write-CerebroLog "Reflexao" "já rodando"; exit 0 }
 try {
   $marca = Join-Path $State "reflexao.ultima"
@@ -35,9 +36,13 @@ try {
     "# Retros das tarefas autônomas`n`n$(if ($retros) { $retros } else { '(nenhuma)' })`n`n" +
     "# Propostas recusadas nos últimos 30 dias (não repita sem evidência nova)`n`n$(if ($recusas) { $recusas } else { '(nenhuma)' })"
 
-  $claudeHome = Join-Path $HOME ".claude"
-  $saida = Invoke-Claude -Prompt $prompt -AddDir @($claudeHome) -MaxTurnos 30
-  Save-Proposta "reflexao" $saida | Out-Null
+  # Só o que a reflexão precisa ler (nunca ~/.claude inteiro: lá ficam credenciais e conversas).
+  $dirs = @((Join-Path $HOME ".claude\agents"), (Join-Path $HOME ".claude\skills"), (Join-Path $PSScriptRoot "prompts")) | Where-Object { Test-Path $_ }
+  $global = Read-Arquivo (Join-Path $HOME ".claude\CLAUDE.md")
+  if ($global) { $prompt += "`n`n# ~/.claude/CLAUDE.md (regras globais atuais)`n`n$global" }
+  $saida = Invoke-Claude -Prompt $prompt -Papel "reflexao" -AddDir $dirs -MaxTurnos 30
+  if (-not $saida) { Write-CerebroLog "Reflexao" "claude falhou; tenta de novo na próxima rodada com o mesmo período"; exit 0 }
+  Save-Resultado "reflexao" $saida | Out-Null
   Write-Arquivo $marca $agora.ToString("o")
   Sync-Vault "Loop"
 } finally { Exit-Trava "reflexao" }

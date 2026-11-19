@@ -18,8 +18,7 @@ $ErrorActionPreference = "SilentlyContinue"
 
 # ---------------------------------------------------------------- modo hook (rápido)
 if (-not $Worker) {
-  $entrada = ""
-  if ([Console]::IsInputRedirected) { $entrada = [Console]::In.ReadToEnd() }
+  $entrada = Read-EntradaHook
   if ($env:CEREBRO_LOOP -eq "1") { exit 0 }
   $cfg = Get-ConfigCerebro
   if ($cfg.colhedor -and $cfg.colhedor.ativo -eq $false) { exit 0 }
@@ -50,6 +49,12 @@ if (-not $Worker) {
   $disparar = ($Evento -in @("PreCompact", "SessionEnd")) -or ($turnos -ge $limite) -or
               ($turnos -ge 3 -and ((Get-Date) - $ultima).TotalMinutes -ge $minutos)
   if ($novoBytes -lt 3000) { $disparar = $false }
+  # teto diário de colheitas (config colhedor.max_por_dia, padrão 30)
+  $maxDia = 30; if ($cfg.colhedor.max_por_dia) { $maxDia = [int]$cfg.colhedor.max_por_dia }
+  $diaArq = Join-Path $State ("colhedor-dia-" + (Get-Date -Format "yyyy-MM-dd"))
+  $hojeN = 0; if (Test-Path $diaArq) { $hojeN = [int](Read-Arquivo $diaArq).Trim() }
+  if ($disparar -and $hojeN -ge $maxDia) { $disparar = $false; Write-CerebroLog "Colhedor" "teto diário atingido" }
+  if ($disparar) { Write-Arquivo $diaArq ("{0}" -f ($hojeN + 1)) }
 
   if ($disparar) {
     $cwd = [string]$j.cwd
@@ -60,7 +65,9 @@ if (-not $Worker) {
     $turnos = 0; $ultima = Get-Date
   }
   Write-Arquivo $contArq ("{0}|{1}" -f $turnos, $ultima.ToString("o"))
-  Get-ChildItem $State -Filter "colhedor-*" | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -Force
+  # .turnos velhos saem em 7 dias; .offset fica 90 dias (sessão retomada não é relida do zero)
+  Get-ChildItem $State -Filter "colhedor-*.turnos" | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -Force
+  Get-ChildItem $State -Filter "colhedor-*.offset" | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-90) } | Remove-Item -Force
   exit 0
 }
 
@@ -88,7 +95,7 @@ try {
   foreach ($linha in ($novo -split "`n")) {
     if (-not $linha.Trim()) { continue }
     try { $d = $linha | ConvertFrom-Json } catch { continue }
-    if ($d.isMeta -or $d.isSidechain) { continue }
+    if ($d.isMeta -or $d.isSidechain -or $d.isCompactSummary) { continue }
     $c = $d.message.content
     $texto = ""
     if ($c -is [string]) { $texto = $c }
@@ -114,9 +121,9 @@ try {
   $prompt = (Get-Prompt "colhedor") + "`n`n# Data de hoje: $((Get-Date).ToString('yyyy-MM-dd'))`n" +
     "# Sessão: $($Sessao.Substring(0, [Math]::Min(8, $Sessao.Length))) | pasta da sessão: $Pasta | gatilho: $Evento`n`n" +
     "# Trecho novo da conversa`n`n$conversa"
-  $saida = Invoke-Claude -Prompt $prompt -Tools "Read,Grep,Glob,Edit,Write" -Escrita -MaxTurnos 40
-  if (-not $saida) { Write-CerebroLog "Colhedor" "claude não respondeu; trecho fica para a próxima"; exit 0 }
-  Save-Proposta ("colhedor-" + $Sessao.Substring(0, [Math]::Min(8, $Sessao.Length))) $saida | Out-Null
+  $saida = Invoke-Claude -Prompt $prompt -Papel "colhedor" -Tools "Read,Grep,Glob,Edit,Write" -Raizes @($Vault) -Escrita -MaxTurnos 40
+  if (-not $saida) { Write-CerebroLog "Colhedor" "claude falhou; o trecho fica para a próxima colheita"; exit 0 }
+  Save-Resultado ("colhedor-" + $Sessao.Substring(0, [Math]::Min(8, $Sessao.Length))) $saida | Out-Null
   Write-Arquivo $offArq "$fim"
   Sync-Vault "Colhedor"
 } finally { Exit-Trava $trava }

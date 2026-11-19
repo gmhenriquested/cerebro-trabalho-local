@@ -27,7 +27,14 @@ Ordem sugerida. Ligue uma etapa, use por alguns dias, só então siga.
 - [ ] Rodar 3 tarefas pequenas com `executor.ps1 -Tarefa <nome>` e ler os relatórios.
 - [ ] Subir para nível 1 e ligar `executor.ativo`. Nível 2 só depois de umas 10 tarefas boas.
 
+## Etapa 6: modelos (contínuo)
+- [ ] Depois de 2 semanas, ler o custo por papel no resumo semanal.
+- [ ] Ter casos de eval para os agentes mais usados, para a cascata escolher o modelo por medida.
+
 ## Ideias para depois
+- **Executor isolado de verdade:** WSL2 com o sandbox nativo do Claude Code, ou um usuário Windows separado sem credenciais.
+- **Saída estruturada:** `--json-schema` para o veredito do revisor, a nota do juiz e as propostas, no lugar das regex sobre texto.
+- **Hooks async nativos:** `async: true` nos hooks Stop e PreCompact, no lugar do `Start-Process`.
 - **Paralelismo:** `max_tarefas_por_rodada` maior roda em sequência; para paralelo, um processo por worktree (os worktrees já isolam).
 - **Memória nativa no vault:** junction (`mklink /J`) da pasta de memória do Claude Code para `memory/` do vault, como no cérebro pessoal.
 - **Busca por significado local:** Smart Connections no Obsidian ou índice de embeddings local, sempre como camada extra.

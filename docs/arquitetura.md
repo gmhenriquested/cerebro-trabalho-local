@@ -74,9 +74,11 @@ A fronteira é garantida pela `guarda.ps1` (variável `CEREBRO_ESCRITA=auto`), n
 - *Memória em arquivos:* um fato por arquivo, com `description` para decidir relevância. O vault é a memória de longo prazo; a conversa é memória de trabalho.
 
 **Ferramentas e segurança**
-- *Menor privilégio:* cada agente declara só as ferramentas de que precisa; loops rodam com ferramentas só de leitura; o executor tem uma lista explícita de comandos (`--allowedTools`) e tudo o resto é negado (`--permission-mode dontAsk`).
+- *Menor privilégio:* cada agente declara só as ferramentas de que precisa. Os loops rodam com `--permission-mode dontAsk`, uma lista explícita em `--allowedTools`, `--setting-sources user` (um repositório não amplia permissões) e uma config de segurança própria (`loop-settings.json`, com a guarda e regras `deny`).
+- *Pastas permitidas por papel:* a guarda só deixa o agente autônomo escrever dentro das suas raízes: o worktree, no caso do executor; as áreas liberadas do vault, no caso do colhedor, do noturno e do semanal. Ela falha fechado: se não conseguir decidir, nega.
+- *Limite honesto:* comandos como `npm test` executam scripts do próprio repositório, que o agente pode editar. Ou seja, no nível 1 o executor consegue rodar código com o seu usuário. Para isolamento de verdade, rode o executor no WSL2 (com o sandbox nativo do Claude Code) ou com outro usuário do Windows sem credenciais. Ver ADR 0005.
 - *Guardas determinísticas:* regras que não podem falhar ficam em hook (`guarda.ps1`), não em prompt. O prompt pede; o hook garante.
-- *Isolamento:* o trabalho autônomo acontece num `git worktree` com branch própria. A sua cópia de trabalho nunca é tocada.
+- *Isolamento:* o trabalho autônomo acontece num `git worktree` com branch própria, em `%LOCALAPPDATA%\cerebro\worktrees` (fora de `~/.claude`). A sua cópia de trabalho não é tocada. Uma tarefa que volta para ajuste reaproveita a branch. O worktree é removido sozinho quando a tarefa vira `feita` ou `recusada`.
 - *Níveis de autonomia:* 0 (só plano), 1 (branch local), 2 (push da branch + PR em rascunho). Merge é sempre humano.
 
 **Qualidade do trabalho autônomo**
@@ -87,6 +89,7 @@ A fronteira é garantida pela `guarda.ps1` (variável `CEREBRO_ESCRITA=auto`), n
 - *Orçamento:* `--max-turns`, tempo máximo no agendador e uma tarefa por rodada por padrão.
 
 **Aprendizado**
+- *Modelo por papel, medido:* barato onde a tarefa é mecânica, forte onde errar custa caro; métricas passivas de graça, evals em cascata com cache e teto, escalada no executor (ADR 0009).
 - *Captura implícita:* o colhedor tira o aprendizado da própria conversa; não depende de você pedir.
 - *Humano no portão para o que importa:* o automático aplica só baixo risco; o que muda comportamento vira proposta de um clique.
 - *Várias fontes de sinal:* suas correções nas conversas, as retros que o executor escreve no fim de cada tarefa e os motivos das suas recusas.

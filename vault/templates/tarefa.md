@@ -2,7 +2,7 @@
 tags: [tarefa]
 criado: {{date:YYYY-MM-DD}}
 status: rascunho
-repo: nome-do-repo-em-config-autonomia
+repo: chave-do-repo-em-config-cerebro-repos
 nivel: 1
 ---
 

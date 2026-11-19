@@ -2,6 +2,7 @@
 
 - Vault: `{{VAULT}}` (Obsidian + git). Regras em `{{VAULT}}\CLAUDE.md`. O hook SessionStart já injeta `memory/MEMORY.md` e `indice.md`.
 - Memória durável vai **no vault** (`memory/`, um fato por arquivo, linha em `MEMORY.md`). Decisão vira ADR em `decisoes/`. Salve quando for óbvio, sem interromper o dono: um colhedor em segundo plano lê a conversa e guarda o que escapar.
+- Não use a memória automática nativa do Claude Code para assuntos de trabalho: a memória é o `memory/` do vault (uma fonte só).
 - O dono não roda rituais. Se o SessionStart pedir revisão de um clique, faça depois da primeira tarefa, numa pergunta só, e não insista.
 - Antes de responder sobre projetos, pessoas ou decisões do trabalho, consulte o vault.
 - Agentes: `curador`, `triagem`, `enriquecedor`, `ata`, `pesquisador`, `planejador`, `revisor-codigo`, `verificador`. Use subagentes para isolar contexto (pesquisa, revisão, verificação) e chame vários em paralelo quando forem independentes.
